@@ -1380,30 +1380,31 @@ class MainWindow(QtWidgets.QMainWindow):
         for item in self.labelList:
             item.setCheckState(Qt.Checked if value else Qt.Unchecked)
 
-    def loadFile(self, filename=None):
+    def loadFile(self, file_id=None):
         """Load the specified file, or the last opened file if None."""
         # changing fileListWidget loads file
-        if filename in self.imageList and (
-            self.fileListWidget.currentRow() != self.imageList.index(filename)
+        if file_id in self.imageList and (
+            self.fileListWidget.currentRow() != self.imageList.index(file_id)
         ):
-            self.fileListWidget.setCurrentRow(self.imageList.index(filename))
+            self.fileListWidget.setCurrentRow(self.imageList.index(file_id))
             self.fileListWidget.repaint()
             return
 
         self.resetState()
         self.canvas.setEnabled(False)
-        if filename is None:
-            filename = self.settings.value("filename", "")
-        filename = str(filename)
-        if not QtCore.QFile.exists(filename):
+        if file_id is None:
+            file_id = self.settings.value("file_id", "")
+        file_id = str(file_id)
+        success,file_data = self._server.Q_file(file_id)
+        if not success:
             self.errorMessage(
-                self.tr("Error opening file"),
-                self.tr("No such file: <b>%s</b>") % filename,
+                self.tr("Error Opening Remote"),
+                self.tr("No Such Remote File: <b>%s</b>") % file_id,
             )
             return False
         # assumes same name, but json extension
-        self.status(self.tr("Loading %s...") % osp.basename(str(filename)))
-        label_file = osp.splitext(filename)[0] + ".json"
+        self.status(self.tr("Loading %s...") % osp.basename(str(file_id)))
+        label_file = osp.splitext(file_id)[0] + ".json"
         if self.output_dir:
             label_file_without_path = osp.basename(label_file)
             label_file = osp.join(self.output_dir, label_file_without_path)
@@ -1429,9 +1430,9 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             self.otherData = self.labelFile.otherData
         else:
-            self.imageData = LabelFile.load_image_file(filename)
+            self.imageData = LabelFile.load_image_file(file_id)
             if self.imageData:
-                self.imagePath = filename
+                self.imagePath = file_id
             self.labelFile = None
         image = QtGui.QImage.fromData(self.imageData)
 
@@ -1445,12 +1446,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.tr(
                     "<p>Make sure <i>{0}</i> is a valid image file.<br/>"
                     "Supported image formats: {1}</p>"
-                ).format(filename, ",".join(formats)),
+                ).format(file_id, ",".join(formats)),
             )
-            self.status(self.tr("Error reading %s") % filename)
+            self.status(self.tr("Error reading %s") % file_id)
             return False
         self.image = image
-        self.filename = filename
+        self.filename = file_id
         if self._config["keep_prev"]:
             prev_shapes = self.canvas.shapes
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
@@ -1506,7 +1507,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.paintCanvas()
         self.addRecentFile(self.filename)
         self.toggleActions(True)
-        self.status(self.tr("Loaded %s") % osp.basename(str(filename)))
+        self.status(self.tr("Loaded %s") % osp.basename(str(file_id)))
         return True
 
     def resizeEvent(self, event):
@@ -1647,8 +1648,16 @@ class MainWindow(QtWidgets.QMainWindow):
         #     formats + ["*%s" % LabelFile.suffix]
         # )
         remote_file_url, okPressed = QtWidgets.QInputDialog.getText(self, "Get Remote File","Remote File Url:", QtWidgets.QLineEdit.Normal, "")
+        remote_file_url = remote_file_url.strip(' ')
         if okPressed and remote_file_url != '':
             print(remote_file_url)
+            if remote_file_url.startswith('http'):
+                s_index = remote_file_url.index('/file')
+                remote_url = remote_file_url[:s_index]
+                file_id = remote_file_url[s_index+6:s_index+38]
+                self._server.server = remote_url
+                self.loadFile(file_id)
+
         # filename = QtWidgets.QFileDialog.getOpenFileName(
         #     self,
         #     self.tr("%s - Choose Image or Label file") % __appname__,

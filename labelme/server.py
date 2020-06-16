@@ -21,6 +21,9 @@ class ServerInterface(object):
     
     def Q_image(self,image_id):
         return self._request_(f'image/{image_id}')
+
+    def Q_file(self,file_id):
+        return self._request_(f'file/{file_id}').json()
     
     def QU_label(self,label_id,data = None):
         return self._request_(f'label/{label_id}',data=data).json()
