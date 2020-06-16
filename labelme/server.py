@@ -6,24 +6,32 @@ class ServerInterface(object):
 
     def _request_(self,url,data=None):
         if data is None:
-            return requests.get(self.server+'/'+url)
+            response = requests.get(self.server+'/'+url)
+            return response
         else:
-            return requests.post(self.server+'/'+url,data=data)
+            response = requests.post(self.server+'/'+url,data=data)
+            return response
 
     def Q_projects(self):
-        return self._request_('projects').json()
+        response = self._request_('projects')
+        return response.ok, response.json()
 
     def Q_project(self,project_id):
-        return self._request_(f'project/{project_id}').json()
+        response = self._request_(f'project/{project_id}')
+        return response.ok,response.json()
 
     def Q_dataset(self,dataset_id):
-        return self._request_(f'dataset/{dataset_id}').json()
+        response = self._request_(f'dataset/{dataset_id}')
+        return response.ok , response.json()
     
     def Q_image(self,image_id):
-        return self._request_(f'image/{image_id}')
+        response = self._request_(f'image/{image_id}')
+        return response.ok , response
 
     def Q_file(self,file_id):
-        return self._request_(f'file/{file_id}').json()
+        response = self._request_(f'file/{file_id}')
+        return response.ok,response.json()
     
     def QU_label(self,label_id,data = None):
-        return self._request_(f'label/{label_id}',data=data).json()
+        response = self._request_(f'label/{label_id}',data=data)
+        return response.ok, response.json()

@@ -1404,15 +1404,16 @@ class MainWindow(QtWidgets.QMainWindow):
             return False
         # assumes same name, but json extension
         self.status(self.tr("Loading %s...") % osp.basename(str(file_id)))
-        label_file = osp.splitext(file_id)[0] + ".json"
-        if self.output_dir:
-            label_file_without_path = osp.basename(label_file)
-            label_file = osp.join(self.output_dir, label_file_without_path)
-        if QtCore.QFile.exists(label_file) and LabelFile.is_label_file(
-            label_file
-        ):
+        success,label_data = self._server.QU_label(file_data['label_id'])
+        if success:
             try:
-                self.labelFile = LabelFile(label_file)
+                self.labelFile = LabelFile(
+                    file_id,
+                    save_fn=self._server.QU_label,
+                    load_fn=self._server.QU_label,
+                    image_load_fn=self._server.Q_image,
+                    label_data=label_data)
+
             except LabelFileError as e:
                 self.errorMessage(
                     self.tr("Error opening file"),
@@ -1425,12 +1426,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.status(self.tr("Error reading %s") % label_file)
                 return False
             self.imageData = self.labelFile.imageData
-            self.imagePath = osp.join(
-                osp.dirname(label_file), self.labelFile.imagePath,
-            )
+            self.imagePath = self.labelFile.imagePath
             self.otherData = self.labelFile.otherData
         else:
-            self.imageData = LabelFile.load_image_file(file_id)
+            success,self.imageData = self._server.Q_image(file_id)
             if self.imageData:
                 self.imagePath = file_id
             self.labelFile = None

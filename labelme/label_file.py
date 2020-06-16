@@ -21,40 +21,17 @@ class LabelFileError(Exception):
 
 class LabelFile(object):
 
-    suffix = ".json"
-
-    def __init__(self, filename=None):
+    def __init__(self, label_id, save_fn, load_fn, image_load_fn, label_data=None):
+        self.label_id = label_id
         self.shapes = []
+        self._save_ = save_fn
+        self._load_ = load_fn
+        self._load_image_ = image_load_fn
         self.imagePath = None
         self.imageData = None
-        if filename is not None:
-            self.load(filename)
-        self.filename = filename
+        self.load(label_data)
 
-    @staticmethod
-    def load_image_file(filename):
-        try:
-            image_pil = PIL.Image.open(filename)
-        except IOError:
-            logger.error("Failed opening image file: {}".format(filename))
-            return
-
-        # apply orientation to image according to exif
-        image_pil = utils.apply_exif_orientation(image_pil)
-
-        with io.BytesIO() as f:
-            ext = osp.splitext(filename)[1].lower()
-            if PY2 and QT4:
-                format = "PNG"
-            elif ext in [".jpg", ".jpeg"]:
-                format = "JPEG"
-            else:
-                format = "PNG"
-            image_pil.save(f, format=format)
-            f.seek(0)
-            return f.read()
-
-    def load(self, filename):
+    def load(self,data=None):
         keys = [
             "version",
             "imageData",
@@ -63,6 +40,8 @@ class LabelFile(object):
             "flags",  # image level flags
             "imageHeight",
             "imageWidth",
+            "label_id",
+            "image_id"
         ]
         shape_keys = [
             "label",
@@ -72,13 +51,16 @@ class LabelFile(object):
             "flags",
         ]
         try:
-            with open(filename, "rb" if PY2 else "r") as f:
-                data = json.load(f)
+            if data is None:
+                success,data = self._load_(self.label_id)
+                if not success:
+                    raise LabelFileError(f'Load Label:{self.label_id} Error')
+
             version = data.get("version")
             if version is None:
                 logger.warn(
                     "Loading JSON file ({}) of unknown version".format(
-                        filename
+                        self.label_id
                     )
                 )
             elif version.split(".")[0] != __version__.split(".")[0]:
@@ -86,25 +68,13 @@ class LabelFile(object):
                     "This JSON file ({}) may be incompatible with "
                     "current labelme. version in file: {}, "
                     "current version: {}".format(
-                        filename, version, __version__
+                        self.label_id, version, __version__
                     )
                 )
 
-            if data["imageData"] is not None:
-                imageData = base64.b64decode(data["imageData"])
-                if PY2 and QT4:
-                    imageData = utils.img_data_to_png_data(imageData)
-            else:
-                # relative path from label file to relative path from cwd
-                imagePath = osp.join(osp.dirname(filename), data["imagePath"])
-                imageData = self.load_image_file(imagePath)
+            success,imageData = self._load_image_(data['image_id'])
             flags = data.get("flags") or {}
             imagePath = data["imagePath"]
-            self._check_image_height_and_width(
-                base64.b64encode(imageData).decode("utf-8"),
-                data.get("imageHeight"),
-                data.get("imageWidth"),
-            )
             shapes = [
                 dict(
                     label=s["label"],
@@ -131,25 +101,9 @@ class LabelFile(object):
         self.shapes = shapes
         self.imagePath = imagePath
         self.imageData = imageData
-        self.filename = filename
+        # self.filename = filename
         self.otherData = otherData
 
-    @staticmethod
-    def _check_image_height_and_width(imageData, imageHeight, imageWidth):
-        img_arr = utils.img_b64_to_arr(imageData)
-        if imageHeight is not None and img_arr.shape[0] != imageHeight:
-            logger.error(
-                "imageHeight does not match with imageData or imagePath, "
-                "so getting imageHeight from actual image."
-            )
-            imageHeight = img_arr.shape[0]
-        if imageWidth is not None and img_arr.shape[1] != imageWidth:
-            logger.error(
-                "imageWidth does not match with imageData or imagePath, "
-                "so getting imageWidth from actual image."
-            )
-            imageWidth = img_arr.shape[1]
-        return imageHeight, imageWidth
 
     def save(
         self,
@@ -162,11 +116,6 @@ class LabelFile(object):
         otherData=None,
         flags=None,
     ):
-        if imageData is not None:
-            imageData = base64.b64encode(imageData).decode("utf-8")
-            imageHeight, imageWidth = self._check_image_height_and_width(
-                imageData, imageHeight, imageWidth
-            )
         if otherData is None:
             otherData = {}
         if flags is None:
@@ -176,7 +125,7 @@ class LabelFile(object):
             flags=flags,
             shapes=shapes,
             imagePath=imagePath,
-            imageData=imageData,
+            imageData=None,
             imageHeight=imageHeight,
             imageWidth=imageWidth,
         )
@@ -184,12 +133,8 @@ class LabelFile(object):
             assert key not in data
             data[key] = value
         try:
-            with open(filename, "wb" if PY2 else "w") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+            self._save_(self.label_id,data)
             self.filename = filename
         except Exception as e:
             raise LabelFileError(e)
 
-    @staticmethod
-    def is_label_file(filename):
-        return osp.splitext(filename)[1].lower() == LabelFile.suffix
