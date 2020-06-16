@@ -1433,7 +1433,9 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.imageData:
                 self.imagePath = file_id
             self.labelFile = None
-        image = QtGui.QImage.fromData(self.imageData)
+        print(QtGui.QImage.__doc__)
+        image = QtGui.QImage.loadFromData(self.imageData)
+        # image = QtGui.QImage.fromData(self.imageData)
 
         if image.isNull():
             formats = [

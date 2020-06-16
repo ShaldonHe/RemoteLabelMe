@@ -28,7 +28,7 @@ class ServerInterface(object):
     def Q_image(self,image_id):
         response = self._request_(f'image/{image_id}')
         if response.ok:
-            return True,base64.b64encode(response.content)
+            return True,response.content
         else:
             return response.ok , response.content
 
