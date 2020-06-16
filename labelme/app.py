@@ -1649,6 +1649,8 @@ class MainWindow(QtWidgets.QMainWindow):
         remote_file_url, okPressed = QtWidgets.QInputDialog.getText(self, "Get Remote File","Remote File Url:", QtWidgets.QLineEdit.Normal, "")
         if okPressed and remote_file_url != '':
             print(remote_file_url)
+            if ':' in remote_file_url:
+                print()
         # filename = QtWidgets.QFileDialog.getOpenFileName(
         #     self,
         #     self.tr("%s - Choose Image or Label file") % __appname__,
