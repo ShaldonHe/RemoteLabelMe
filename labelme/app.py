@@ -65,7 +65,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if config is None:
             config = get_config()
         self._config = config
-        logger.info('MainWindow Inited')
         self._server = Server()
 
         super(MainWindow, self).__init__()
@@ -1636,11 +1635,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openFile(self, _value=False):
-        logger.info('openFile called')
-
-        # logger.info('openFile called')
-        # if not self.mayContinue():
-        #     return
+        if not self.mayContinue():
+            return
+        
         # path = osp.dirname(str(self.filename)) if self.filename else "."
         # formats = [
         #     "*.{}".format(fmt.data().decode())
@@ -1649,6 +1646,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # filters = self.tr("Image & Label files (%s)") % " ".join(
         #     formats + ["*%s" % LabelFile.suffix]
         # )
+        remote_file_url, okPressed = QtWidgets.QInputDialog.getText(self, "Get Remote File","Remote File Url:", QtWidgets.QLineEdit.Normal, "")
+        if okPressed and remote_file_url != '':
+            print(remote_file_url)
         # filename = QtWidgets.QFileDialog.getOpenFileName(
         #     self,
         #     self.tr("%s - Choose Image or Label file") % __appname__,
