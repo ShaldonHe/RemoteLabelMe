@@ -8,6 +8,7 @@ import PIL.ImageOps
 
 
 def img_data_to_pil(img_data):
+    print(type(img_data))
     f = io.BytesIO()
     f.write(img_data)
     img_pil = PIL.Image.open(f)

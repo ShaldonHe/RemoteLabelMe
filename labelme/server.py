@@ -1,4 +1,5 @@
 import requests
+import base64
 class ServerInterface(object):
     def __init__(self,server_url= 'http://127.0.0.1:5000'):
         super().__init__()
@@ -26,7 +27,10 @@ class ServerInterface(object):
     
     def Q_image(self,image_id):
         response = self._request_(f'image/{image_id}')
-        return response.ok , response
+        if response.ok:
+            return True,base64.b64encode(response.content)
+        else:
+            return response.ok , response.content
 
     def Q_file(self,file_id):
         response = self._request_(f'file/{file_id}')
