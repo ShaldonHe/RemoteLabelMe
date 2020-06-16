@@ -208,13 +208,6 @@ class MainWindow(QtWidgets.QMainWindow):
             "open",
             self.tr("Open image or label file"),
         )
-        openRemote = action(
-            self.tr("&OpenRemote"),
-            self.openRemoteFile,
-            shortcuts["open_remote"],
-            "open",
-            self.tr("Open remote file"),
-        )
         opendir = action(
             self.tr("&Open Dir"),
             self.openDirDialog,
@@ -555,7 +548,6 @@ class MainWindow(QtWidgets.QMainWindow):
             save=save,
             saveAs=saveAs,
             open=open_,
-            openRemote=openRemote,
             close=close,
             deleteFile=deleteFile,
             toggleKeepPrevMode=toggle_keep_prev_mode,
@@ -583,7 +575,7 @@ class MainWindow(QtWidgets.QMainWindow):
             zoomActions=zoomActions,
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
-            fileMenuActions=(open_, opendir, openRemote, save, saveAs, close, quit),
+            fileMenuActions=(open_, opendir, save, saveAs, close, quit),
             tool=(),
             # XXX: need to add some actions here to activate the shortcut
             editMenu=(
@@ -1648,29 +1640,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openFile(self, _value=False):
-        if not self.mayContinue():
-            return
-        path = osp.dirname(str(self.filename)) if self.filename else "."
-        formats = [
-            "*.{}".format(fmt.data().decode())
-            for fmt in QtGui.QImageReader.supportedImageFormats()
-        ]
-        filters = self.tr("Image & Label files (%s)") % " ".join(
-            formats + ["*%s" % LabelFile.suffix]
-        )
-        filename = QtWidgets.QFileDialog.getOpenFileName(
-            self,
-            self.tr("%s - Choose Image or Label file") % __appname__,
-            path,
-            filters,
-        )
-        if QT5:
-            filename, _ = filename
-        filename = str(filename)
-        if filename:
-            self.loadFile(filename)
-
-    def openRemoteFile(self, _value=False):
         if not self.mayContinue():
             return
         path = osp.dirname(str(self.filename)) if self.filename else "."
