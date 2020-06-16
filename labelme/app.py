@@ -16,21 +16,13 @@ from labelme import __appname__
 from labelme import PY2
 from labelme import QT5
 
-from . import utils
+import labelme.utils as utils
 from labelme.config import get_config
-from labelme.label_file import LabelFile
-from labelme.label_file import LabelFileError
+from labelme.label_file import LabelFile,LabelFileError
 from labelme.logger import logger
 from labelme.shape import Shape
-from labelme.widgets import BrightnessContrastDialog
-from labelme.widgets import Canvas
-from labelme.widgets import LabelDialog
-from labelme.widgets import LabelListWidget
-from labelme.widgets import LabelListWidgetItem
-from labelme.widgets import ToolBar
-from labelme.widgets import UniqueLabelQListWidget
-from labelme.widgets import ZoomWidget
-from server
+from labelme.widgets import BrightnessContrastDialog,Canvas,LabelDialog,LabelListWidget,LabelListWidgetItem,ToolBar,UniqueLabelQListWidget,ZoomWidget
+from labelme.server import ServerInterface as Server
 
 
 # FIXME
@@ -73,6 +65,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if config is None:
             config = get_config()
         self._config = config
+        logger.info('MainWindow Inited')
+        self._server = Server()
 
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
@@ -1183,6 +1177,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.flag_widget.addItem(item)
 
     def saveLabels(self, filename):
+        print('saveLabels called')
         lf = LabelFile()
 
         def format_shape(s):
@@ -1641,27 +1636,30 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openFile(self, _value=False):
-        if not self.mayContinue():
-            return
-        path = osp.dirname(str(self.filename)) if self.filename else "."
-        formats = [
-            "*.{}".format(fmt.data().decode())
-            for fmt in QtGui.QImageReader.supportedImageFormats()
-        ]
-        filters = self.tr("Image & Label files (%s)") % " ".join(
-            formats + ["*%s" % LabelFile.suffix]
-        )
-        filename = QtWidgets.QFileDialog.getOpenFileName(
-            self,
-            self.tr("%s - Choose Image or Label file") % __appname__,
-            path,
-            filters,
-        )
-        if QT5:
-            filename, _ = filename
-        filename = str(filename)
-        if filename:
-            self.loadFile(filename)
+        logger.info('openFile called')
+
+        # logger.info('openFile called')
+        # if not self.mayContinue():
+        #     return
+        # path = osp.dirname(str(self.filename)) if self.filename else "."
+        # formats = [
+        #     "*.{}".format(fmt.data().decode())
+        #     for fmt in QtGui.QImageReader.supportedImageFormats()
+        # ]
+        # filters = self.tr("Image & Label files (%s)") % " ".join(
+        #     formats + ["*%s" % LabelFile.suffix]
+        # )
+        # filename = QtWidgets.QFileDialog.getOpenFileName(
+        #     self,
+        #     self.tr("%s - Choose Image or Label file") % __appname__,
+        #     path,
+        #     filters,
+        # )
+        # if QT5:
+        #     filename, _ = filename
+        # filename = str(filename)
+        # if filename:
+        #     self.loadFile(filename)
 
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir
@@ -1868,6 +1866,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setDirty()
 
     def openDirDialog(self, _value=False, dirpath=None):
+        logger.info('OpenDirDialog Called')
         if not self.mayContinue():
             return
 

@@ -1,7 +1,4 @@
 import requests
-server_url = 'http://127.0.0.1:5000'
-
-
 class ServerInterface(object):
     def __init__(self,server_url= 'http://127.0.0.1:5000'):
         super().__init__()
