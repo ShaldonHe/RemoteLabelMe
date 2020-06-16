@@ -1,29 +1,29 @@
 import requests
 server_url = 'http://127.0.0.1:5000'
-def projec_list():
-    res = requests.get(server_url+'projects')
-    return res.json()
 
-def project(project_id):
-    url = f'{server_url}/projects/{project_id}'
-    res = requests.get(url)
-    return res.json()
 
-def dataset(project_id):
-    url = f'{server_url}/dataset/{project_id}'
-    res = requests.get(url)
-    return res.json()
+class ServerInterface(object):
+    def __init__(self,server_url= 'http://127.0.0.1:5000'):
+        super().__init__()
+        self.server = server_url
 
-def image(image_id):
-    url = f'{server_url}/image/{image_id}'
-    res = requests.get(url)
-    return res.json()
+    def _request_(self,url,data=None):
+        if data is None:
+            return requests.get(self.server+'/'+url)
+        else:
+            return requests.post(self.server+'/'+url,data=data)
 
-def label(project_id,dataset_id,image_id, data = None):
-    url = f'{server_url}/label/{project_id}/{dataset_id}/{image_id}'
-    if data is None:
-        res = requests.get(url)
-        return res.json()
-    else:
-        res = requests.post(url,data)
-        return res.json()
+    def Q_projects(self):
+        return self._request_('projects').json()
+
+    def Q_project(self,project_id):
+        return self._request_(f'project/{project_id}').json()
+
+    def Q_dataset(self,dataset_id):
+        return self._request_(f'dataset/{dataset_id}').json()
+    
+    def Q_image(self,image_id):
+        return self._request_(f'image/{image_id}')
+    
+    def QU_label(self,label_id,data = None):
+        return self._request_(f'label/{label_id}',data=data).json()
