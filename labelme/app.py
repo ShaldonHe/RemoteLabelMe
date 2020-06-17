@@ -200,14 +200,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.openFile,
             shortcuts["open"],
             "open",
-            self.tr("Open image or label file"),
+            self.tr("Open Remote File"),
         )
         opendir = action(
-            self.tr("&Open Dir"),
+            self.tr("&Open Project"),
             self.openDirDialog,
             shortcuts["open_dir"],
             "open",
-            self.tr(u"Open Dir"),
+            self.tr(u"Open Remote Project"),
         )
         openNextImg = action(
             self.tr("&Next Image"),
@@ -251,14 +251,6 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
-        changeOutputDir = action(
-            self.tr("&Change Output Dir"),
-            slot=self.changeOutputDirDialog,
-            shortcut=shortcuts["save_to"],
-            icon="open",
-            tip=self.tr(u"Change where annotations are loaded/saved"),
-        )
-
         saveAuto = action(
             text=self.tr("Save &Automatically"),
             slot=lambda x: self.actions.saveAuto.setChecked(x),
@@ -268,14 +260,6 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=True,
         )
         saveAuto.setChecked(self._config["auto_save"])
-
-        saveWithImageData = action(
-            text="Save With Image Data",
-            slot=self.enableSaveImageWithData,
-            tip="Save image data in label file",
-            checkable=True,
-            checked=self._config["store_data"],
-        )
 
         close = action(
             "&Close",
@@ -537,8 +521,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # Store actions for further handling.
         self.actions = utils.struct(
             saveAuto=saveAuto,
-            saveWithImageData=saveWithImageData,
-            changeOutputDir=changeOutputDir,
+            # saveWithImageData=saveWithImageData,
+            # changeOutputDir=changeOutputDir,
             save=save,
             saveAs=saveAs,
             open=open_,
@@ -638,8 +622,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 save,
                 saveAs,
                 saveAuto,
-                changeOutputDir,
-                saveWithImageData,
+                # changeOutputDir,
+                # saveWithImageData,
                 close,
                 deleteFile,
                 None,
@@ -1550,9 +1534,9 @@ class MainWindow(QtWidgets.QMainWindow):
         w = self.centralWidget().width() - 2.0
         return w / self.canvas.pixmap.width()
 
-    def enableSaveImageWithData(self, enabled):
-        self._config["store_data"] = enabled
-        self.actions.saveWithImageData.setChecked(enabled)
+    # def enableSaveImageWithData(self, enabled):
+    #     self._config["store_data"] = enabled
+    #     self.actions.saveWithImageData.setChecked(enabled)
 
     def closeEvent(self, event):
         if not self.mayContinue():
