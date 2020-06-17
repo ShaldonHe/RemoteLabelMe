@@ -204,7 +204,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         opendir = action(
             self.tr("&Open Project"),
-            self.openDirDialog,
+            self.openRemoteProjectDialog,
             shortcuts["open_dir"],
             "open",
             self.tr(u"Open Remote Project"),
@@ -231,14 +231,6 @@ class MainWindow(QtWidgets.QMainWindow):
             shortcuts["save"],
             "save",
             self.tr("Save labels to file"),
-            enabled=False,
-        )
-        saveAs = action(
-            self.tr("&Save As"),
-            self.saveFileAs,
-            shortcuts["save_as"],
-            "save-as",
-            self.tr("Save labels to a different file"),
             enabled=False,
         )
 
@@ -521,10 +513,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Store actions for further handling.
         self.actions = utils.struct(
             saveAuto=saveAuto,
-            # saveWithImageData=saveWithImageData,
-            # changeOutputDir=changeOutputDir,
             save=save,
-            saveAs=saveAs,
             open=open_,
             close=close,
             deleteFile=deleteFile,
@@ -553,7 +542,7 @@ class MainWindow(QtWidgets.QMainWindow):
             zoomActions=zoomActions,
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
-            fileMenuActions=(open_, opendir, save, saveAs, close, quit),
+            fileMenuActions=(open_, opendir, save, close, quit),
             tool=(),
             # XXX: need to add some actions here to activate the shortcut
             editMenu=(
@@ -596,7 +585,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 editMode,
                 brightnessContrast,
             ),
-            onShapesPresent=(saveAs, hideAll, showAll),
+            onShapesPresent=(hideAll, showAll),
         )
 
         self.canvas.edgeSelected.connect(self.canvasShapeEdgeSelected)
@@ -620,10 +609,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 opendir,
                 self.menus.recentFiles,
                 save,
-                saveAs,
                 saveAuto,
-                # changeOutputDir,
-                # saveWithImageData,
                 close,
                 deleteFile,
                 None,
@@ -716,7 +702,7 @@ class MainWindow(QtWidgets.QMainWindow):
         }  # key=filename, value=scroll_value
 
         if filename is not None and osp.isdir(filename):
-            self.importDirImages(filename, load=False)
+            self.importRemoteProjectImages(filename, load=False)
         else:
             self.filename = filename
 
@@ -1023,7 +1009,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.uniqLabelList.addItem(item)
 
     def fileSearchChanged(self):
-        self.importDirImages(
+        self.importRemoteProjectImages(
             self.lastOpenDir, pattern=self.fileSearch.text(), load=False,
         )
 
@@ -1040,7 +1026,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if currIndex < len(self.imageList):
             filename = self.imageList[currIndex]
             if filename:
-                self.loadFile(filename)
+                self.loadFile(self.dataset_info['index'][filename]['label_id'])
+
+                # self.loadFile(filename)
 
     # React to canvas signals.
     def shapeSelectionChanged(self, selected_shapes):
@@ -1392,6 +1380,9 @@ class MainWindow(QtWidgets.QMainWindow):
         success,label_data = self._server.QU_label(file_data['label_id'])
         if success:
             try:
+                if 'image_id' not in label_data or 'label_id' not in label_data:
+                    _, file_info = self._server.Q_file(file_data['label_id'])
+                    label_data.update(file_info)
                 self.labelFile = LabelFile(
                     file_id,
                     save_fn=self._server.QU_label,
@@ -1406,9 +1397,9 @@ class MainWindow(QtWidgets.QMainWindow):
                         "<p><b>%s</b></p>"
                         "<p>Make sure <i>%s</i> is a valid label file."
                     )
-                    % (e, label_file),
+                    % (e, file_id),
                 )
-                self.status(self.tr("Error reading %s") % label_file)
+                self.status(self.tr("Error reading %s") % file_id)
                 return False
             # self.imageData = utils.image.img_data_to_pil( self.labelFile.imageData)
             self.imageData = self.labelFile.imageData
@@ -1617,7 +1608,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.filename = filename
 
         if self.filename and load:
-            self.loadFile(self.filename)
+            self.loadFile(self.dataset_info['index'][self.filename]['label_id'])
+            # self.loadFile(self.filename)
 
         self._config["keep_prev"] = keep_prev
 
@@ -1625,36 +1617,15 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.mayContinue():
             return
         
-        # path = osp.dirname(str(self.filename)) if self.filename else "."
-        # formats = [
-        #     "*.{}".format(fmt.data().decode())
-        #     for fmt in QtGui.QImageReader.supportedImageFormats()
-        # ]
-        # filters = self.tr("Image & Label files (%s)") % " ".join(
-        #     formats + ["*%s" % LabelFile.suffix]
-        # )
         remote_file_url, okPressed = QtWidgets.QInputDialog.getText(self, "Get Remote File","Remote File Url:", QtWidgets.QLineEdit.Normal, "")
         remote_file_url = remote_file_url.strip(' ')
         if okPressed and remote_file_url != '':
-            print(remote_file_url)
             if remote_file_url.startswith('http'):
                 s_index = remote_file_url.index('/file')
                 remote_url = remote_file_url[:s_index]
                 file_id = remote_file_url[s_index+6:s_index+38]
                 self._server.server = remote_url
                 self.loadFile(file_id)
-
-        # filename = QtWidgets.QFileDialog.getOpenFileName(
-        #     self,
-        #     self.tr("%s - Choose Image or Label file") % __appname__,
-        #     path,
-        #     filters,
-        # )
-        # if QT5:
-        #     filename, _ = filename
-        # filename = str(filename)
-        # if filename:
-        #     self.loadFile(filename)
 
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir
@@ -1684,7 +1655,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusBar().show()
 
         current_filename = self.filename
-        self.importDirImages(self.lastOpenDir, load=False)
+        self.importRemoteProjectImages(self.lastOpenDir, load=False)
 
         if current_filename in self.imageList:
             # retain currently selected file
@@ -1698,9 +1669,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.labelFile.save
         self._saveFile(self.labelFile.label_id)
 
-    def saveFileAs(self, _value=False):
-        assert not self.image.isNull(), "cannot save empty image"
-        self._saveFile(self.saveFileDialog())
+    # def saveFileAs(self, _value=False):
+    #     assert not self.image.isNull(), "cannot save empty image"
+    #     self._saveFile(self.saveFileDialog())
 
     def saveFileDialog(self):
         caption = self.tr("%s - Choose File") % __appname__
@@ -1748,7 +1719,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setClean()
         self.toggleActions(False)
         self.canvas.setEnabled(False)
-        self.actions.saveAs.setEnabled(False)
 
     def getLabelFile(self):
         if self.filename.lower().endswith(".json"):
@@ -1854,29 +1824,32 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.endMove(copy=False)
         self.setDirty()
 
-    def openDirDialog(self, _value=False, dirpath=None):
+    def openRemoteProjectDialog(self, _value=False, dirpath=None):
         logger.info('OpenDirDialog Called')
         if not self.mayContinue():
             return
 
-        defaultOpenDirPath = dirpath if dirpath else "."
-        if self.lastOpenDir and osp.exists(self.lastOpenDir):
-            defaultOpenDirPath = self.lastOpenDir
-        else:
-            defaultOpenDirPath = (
-                osp.dirname(self.filename) if self.filename else "."
-            )
+        # defaultOpenDirPath = dirpath if dirpath else "."
+        # if self.lastOpenDir and osp.exists(self.lastOpenDir):
+        #     defaultOpenDirPath = self.lastOpenDir
+        # else:
+        #     defaultOpenDirPath = (
+        #         osp.dirname(self.filename) if self.filename else "."
+        #     )
 
-        targetDirPath = str(
-            QtWidgets.QFileDialog.getExistingDirectory(
-                self,
-                self.tr("%s - Open Directory") % __appname__,
-                defaultOpenDirPath,
-                QtWidgets.QFileDialog.ShowDirsOnly
-                | QtWidgets.QFileDialog.DontResolveSymlinks,
-            )
-        )
-        self.importDirImages(targetDirPath)
+        # targetDirPath = str(
+        #     QtWidgets.QFileDialog.getExistingDirectory(
+        #         self,
+        #         self.tr("%s - Open Directory") % __appname__,
+        #         defaultOpenDirPath,
+        #         QtWidgets.QFileDialog.ShowDirsOnly
+        #         | QtWidgets.QFileDialog.DontResolveSymlinks,
+        #     )
+        # )
+        remote_project_url, okPressed = QtWidgets.QInputDialog.getText(self, "Open Remote Proejct","Remote Project Url:", QtWidgets.QLineEdit.Normal, "")
+        if not okPressed:
+            return 
+        self.importRemoteProjectImages(remote_project_url)
 
     @property
     def imageList(self):
@@ -1913,31 +1886,39 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.openNextImg()
 
-    def importDirImages(self, dirpath, pattern=None, load=True):
+    def importRemoteProjectImages(self, project_url, pattern=None, load=True):
         self.actions.openNextImg.setEnabled(True)
         self.actions.openPrevImg.setEnabled(True)
 
-        if not self.mayContinue() or not dirpath:
+        if not self.mayContinue() or not project_url:
             return
 
-        self.lastOpenDir = dirpath
+        project_url = project_url.strip(' ')
+        if project_url.startswith('http'):
+            s_index = project_url.index('/project')
+            remote_url = project_url[:s_index]
+            project_id = project_url[s_index+9:]
+            self._server.server = remote_url
+
+        self.lastOpenDir = project_url
         self.filename = None
         self.fileListWidget.clear()
-        for filename in self.scanAllImages(dirpath):
-            if pattern and pattern not in filename:
-                continue
-            label_file = osp.splitext(filename)[0] + ".json"
-            if self.output_dir:
-                label_file_without_path = osp.basename(label_file)
-                label_file = osp.join(self.output_dir, label_file_without_path)
-            item = QtWidgets.QListWidgetItem(filename)
+        success,project_info = self._server.Q_project(project_id)
+        if not success:
+            raise ConnectionError()
+        success,dataset_info = self._server.Q_dataset(project_info['dataset_id'])
+        if not success:
+            raise ConnectionError()
+
+        self.dataset_info = dataset_info
+        self.dataset_info['index'] = {finfo['path']:{'label_id':finfo['label_id'],'image_id':finfo['image_id']} for finfo in dataset_info['images']}
+        for file_info in dataset_info['images']:
+            label_id = file_info['label_id']
+            file_name = file_info['path']
+            image_id = file_info['image_id']
+            item = QtWidgets.QListWidgetItem(file_name)
             item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-            if QtCore.QFile.exists(label_file) and LabelFile.is_label_file(
-                label_file
-            ):
-                item.setCheckState(Qt.Checked)
-            else:
-                item.setCheckState(Qt.Unchecked)
+            item.setCheckState(Qt.Checked)
             self.fileListWidget.addItem(item)
         self.openNextImg(load=load)
 
