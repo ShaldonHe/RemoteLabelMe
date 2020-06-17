@@ -10,7 +10,7 @@ from labelme.logger import logger
 from labelme import PY2
 from labelme import QT4
 from labelme import utils
-
+import json
 
 PIL.Image.MAX_IMAGE_PIXELS = None
 
@@ -133,7 +133,10 @@ class LabelFile(object):
             assert key not in data
             data[key] = value
         try:
-            self._save_(self.label_id,data)
+            json_data = {'label_json':json.dumps(data,ensure_ascii=False)}
+            success, response_json = self._save_(self.label_id,json_data)
+            if not success:
+                raise ConnectionRefusedError()
             self.filename = filename
         except Exception as e:
             raise LabelFileError(e)

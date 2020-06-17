@@ -1177,7 +1177,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def saveLabels(self, filename):
         print('saveLabels called')
-        lf = LabelFile()
+        if self.labelFile is None:
+            lf = LabelFile()
+        else:
+            lf = self.labelFile
 
         def format_shape(s):
             data = s.other_data.copy()
@@ -1200,12 +1203,10 @@ class MainWindow(QtWidgets.QMainWindow):
             flag = item.checkState() == Qt.Checked
             flags[key] = flag
         try:
-            imagePath = osp.relpath(self.imagePath, osp.dirname(filename))
-            imageData = self.imageData if self._config["store_data"] else None
-            if osp.dirname(filename) and not osp.exists(osp.dirname(filename)):
-                os.makedirs(osp.dirname(filename))
+            imagePath = self.imagePath
+            imageData = None
             lf.save(
-                filename=filename,
+                filename=imagePath,
                 shapes=shapes,
                 imagePath=imagePath,
                 imageData=imageData,
@@ -1710,14 +1711,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def saveFile(self, _value=False):
         assert not self.image.isNull(), "cannot save empty image"
-        if self.labelFile:
-            # DL20180323 - overwrite when in directory
-            self._saveFile(self.labelFile.filename)
-        elif self.output_file:
-            self._saveFile(self.output_file)
-            self.close()
-        else:
-            self._saveFile(self.saveFileDialog())
+        # self.labelFile.save
+        self._saveFile(self.labelFile.label_id)
 
     def saveFileAs(self, _value=False):
         assert not self.image.isNull(), "cannot save empty image"
