@@ -1425,7 +1425,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 )
                 self.status(self.tr("Error reading %s") % label_file)
                 return False
-            self.imageData = utils.image.img_data_to_pil( self.labelFile.imageData)
+            # self.imageData = utils.image.img_data_to_pil( self.labelFile.imageData)
+            self.imageData = self.labelFile.imageData
             self.imagePath = self.labelFile.imagePath
             self.otherData = self.labelFile.otherData
         else:
@@ -1434,8 +1435,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.imagePath = file_id
             self.labelFile = None
         print(QtGui.QImage.__doc__)
-        image = QtGui.QImage.loadFromData(self.imageData)
-        # image = QtGui.QImage.fromData(self.imageData)
+        image = QtGui.QImage.fromData(self.imageData)
 
         if image.isNull():
             formats = [
