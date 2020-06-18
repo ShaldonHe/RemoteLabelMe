@@ -363,6 +363,7 @@ class MainWindow(QtWidgets.QMainWindow):
         removePoint = action(
             text="Remove Selected Point",
             slot=self.canvas.removeSelectedPoint,
+            shortcut=shortcuts["remove_selected_point"],
             icon="edit",
             tip="Remove selected point from polygon",
             enabled=False,

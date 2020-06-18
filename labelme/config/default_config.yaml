@@ -86,5 +86,6 @@ shortcuts:
   undo: Ctrl+Z
   undo_last_point: [Ctrl+Z, Backspace]
   add_point_to_edge: Ctrl+Shift+P
+  remove_selected_point: Ctrl+Shift+R
   edit_label: Ctrl+E
   toggle_keep_prev_mode: Ctrl+P
