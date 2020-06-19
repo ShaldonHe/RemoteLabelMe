@@ -144,17 +144,17 @@ def main():
             "Programming Language :: Python :: Implementation :: CPython",
             "Programming Language :: Python :: Implementation :: PyPy",
         ],
-        package_data={"labelme": ["icons/*", "config/*.yaml"]},
+        package_data={"remotelabelme": ["icons/*", "config/*.yaml"]},
         entry_points={
             "console_scripts": [
-                "labelme=labelme.__main__:main",
-                "labelme_draw_json=labelme.cli.draw_json:main",
-                "labelme_draw_label_png=labelme.cli.draw_label_png:main",
-                "labelme_json_to_dataset=labelme.cli.json_to_dataset:main",
-                "labelme_on_docker=labelme.cli.on_docker:main",
+                "remotelabelme=remotelabelme.__main__:main",
+                "labelme_draw_json=remotelabelme.cli.draw_json:main",
+                "labelme_draw_label_png=remotelabelme.cli.draw_label_png:main",
+                "labelme_json_to_dataset=remotelabelme.cli.json_to_dataset:main",
+                "labelme_on_docker=remotelabelme.cli.on_docker:main",
             ],
         },
-        data_files=[("share/man/man1", ["docs/man/labelme.1"])],
+        data_files=[("share/man/man1", ["docs/man/remotelabelme.1"])],
     )
 
 

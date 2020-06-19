@@ -12,17 +12,17 @@ from qtpy.QtCore import Qt
 from qtpy import QtGui
 from qtpy import QtWidgets
 
-from labelme import __appname__
-from labelme import PY2
-from labelme import QT5
+from remotelabelme import __appname__
+from remotelabelme import PY2
+from remotelabelme import QT5
 
-import labelme.utils as utils
-from labelme.config import get_config
-from labelme.label_file import LabelFile,LabelFileError
-from labelme.logger import logger
-from labelme.shape import Shape
-from labelme.widgets import BrightnessContrastDialog,Canvas,LabelDialog,LabelListWidget,LabelListWidgetItem,ToolBar,UniqueLabelQListWidget,ZoomWidget
-from labelme.server import ServerInterface as Server
+import remotelabelme.utils as utils
+from remotelabelme.config import get_config
+from remotelabelme.label_file import LabelFile,LabelFileError
+from remotelabelme.logger import logger
+from remotelabelme.shape import Shape
+from remotelabelme.widgets import BrightnessContrastDialog,Canvas,LabelDialog,LabelListWidget,LabelListWidgetItem,ToolBar,UniqueLabelQListWidget,ZoomWidget
+from remotelabelme.server import ServerInterface as Server
 
 
 # FIXME
@@ -61,7 +61,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if output_file is None:
                 output_file = output
 
-        # see labelme/config/default_config.yaml for valid configuration
+        # see remotelabelme/config/default_config.yaml for valid configuration
         if config is None:
             config = get_config()
         self._config = config
@@ -504,8 +504,8 @@ class MainWindow(QtWidgets.QMainWindow):
         fill_drawing.trigger()
 
         # Lavel list context menu.
-        labelMenu = QtWidgets.QMenu()
-        utils.addActions(labelMenu, (edit, delete))
+        remotelabelmenu = QtWidgets.QMenu()
+        utils.addActions(remotelabelmenu, (edit, delete))
         self.labelList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.labelList.customContextMenuRequested.connect(
             self.popLabelListMenu
@@ -598,7 +598,7 @@ class MainWindow(QtWidgets.QMainWindow):
             view=self.menu(self.tr("&View")),
             help=self.menu(self.tr("&Help")),
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
-            labelList=labelMenu,
+            labelList=remotelabelmenu,
         )
 
         utils.addActions(
@@ -713,7 +713,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # XXX: Could be completely declarative.
         # Restore application settings.
-        self.settings = QtCore.QSettings("labelme", "labelme")
+        self.settings = QtCore.QSettings("remotelabelme", "remotelabelme")
         # FIXME: QSettings.value can return None on PyQt4
         self.recentFiles = self.settings.value("recentFiles", []) or []
         size = self.settings.value("window/size", QtCore.QSize(600, 500))
@@ -865,7 +865,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
 
     def tutorial(self):
-        url = "https://github.com/wkentaro/labelme/tree/master/examples/tutorial"  # NOQA
+        url = "https://github.com/wkentaro/remotelabelme/tree/master/examples/tutorial"  # NOQA
         webbrowser.open(url)
 
     def toggleDrawingSensitive(self, drawing=True):

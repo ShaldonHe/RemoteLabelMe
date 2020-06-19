@@ -5,11 +5,11 @@ import os.path as osp
 
 import PIL.Image
 
-from labelme import __version__
-from labelme.logger import logger
-from labelme import PY2
-from labelme import QT4
-from labelme import utils
+from remotelabelme import __version__
+from remotelabelme.logger import logger
+from remotelabelme import PY2
+from remotelabelme import QT4
+from remotelabelme import utils
 import json
 
 PIL.Image.MAX_IMAGE_PIXELS = None
@@ -66,7 +66,7 @@ class LabelFile(object):
             elif version.split(".")[0] != __version__.split(".")[0]:
                 logger.warn(
                     "This JSON file ({}) may be incompatible with "
-                    "current labelme. version in file: {}, "
+                    "current remotelabelme. version in file: {}, "
                     "current version: {}".format(
                         self.label_id, version, __version__
                     )
